@@ -52,12 +52,16 @@ const Navbar = () => {
             Contact
           </Link>
           <div className="flex items-center">
-            <Button className="mx-1" variant="outline">
+            <Link href="/login">
+            <Button className="mx-1 cursor-pointer" variant="outline">
               Login
             </Button>
-            <Button className="mx-1" variant="outline">
+            </Link>
+            <Link href="/login">
+            <Button className="mx-1 cursor-pointer" variant="outline">
               Signup
             </Button>
+            </Link>
             <ModeToggle />
           </div>
         </div>
