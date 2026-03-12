@@ -6,4 +6,4 @@ const page = () => {
   )
 }
 
-export default Login;
+export default page;
