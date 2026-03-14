@@ -5,9 +5,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { userSchema } from "@/lib/schema";
 import { z } from "zod";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+
 import { DataTable } from "@/components/data-table";
 import { columns, User } from "@/components/columns";
 
@@ -18,10 +20,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+import {
+  fetchUsers,
+  createUser,
+  updateUser as updateUserApi,
+  deleteUser as deleteUserApi,
+} from "@/lib/api";
+
 type UserFormData = z.infer<typeof userSchema>;
 
 export default function AboutPage() {
-  const [users, setUsers] = useState<User[]>([]);
+  const queryClient = useQueryClient();
+
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [open, setOpen] = useState<boolean>(false);
 
@@ -29,25 +41,75 @@ export default function AboutPage() {
     resolver: zodResolver(userSchema),
   });
 
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: ["users"],
+    queryFn: fetchUsers,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: createUser,
+    onSuccess: (data) => {
+      const newUser: User = {
+        id: crypto.randomUUID(),
+        name: data.name,
+        email: data.email,
+      };
+
+      queryClient.setQueryData(["users"], (oldUsers: User[] = []) => [
+        newUser,
+        ...oldUsers,
+      ]);
+    },
+  });
+
   const onSubmit = (data: UserFormData) => {
-    if (editingUser) {
-      setUsers(
-        users.map((user) =>
+    createMutation.mutate(data);
+    form.reset();
+  };
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string | number; data: UserFormData }) =>
+      updateUserApi(Number(id), data),
+
+    onSuccess: (_, variables) => {
+      queryClient.setQueryData(["users"], (oldUsers: User[] = []) =>
+        oldUsers.map((user) =>
+          user.id === variables.id ? { ...user, ...variables.data } : user,
+        ),
+      );
+    },
+  });
+
+  const updateUser = (data: UserFormData) => {
+    if (!editingUser) return;
+
+    if (typeof editingUser.id === "string") {
+      queryClient.setQueryData(["users"], (oldUsers: User[] = []) =>
+        oldUsers.map((user) =>
           user.id === editingUser.id ? { ...user, ...data } : user,
         ),
       );
-
-      setEditingUser(null);
     } else {
-      const newUser: User = {
-        id: crypto.randomUUID(),
-        ...data,
-      };
-
-      setUsers([...users, newUser]);
+      updateMutation.mutate({
+        id: editingUser.id,
+        data,
+      });
     }
 
-    form.reset();
+    setEditingUser(null);
+    setOpen(false);
+  };
+  const deleteMutation = useMutation({
+    mutationFn: deleteUserApi,
+    onSuccess: (_, id) => {
+      queryClient.setQueryData(["users"], (oldUsers: User[]) =>
+        oldUsers.filter((user) => user.id !== id),
+      );
+    },
+  });
+
+  const deleteUser = (id: number) => {
+    deleteMutation.mutate(id);
   };
 
   const editUser = (user: User) => {
@@ -59,22 +121,9 @@ export default function AboutPage() {
     setOpen(true);
   };
 
-  const updateUser = (data: UserFormData) => {
-    if (!editingUser) return;
-
-    setUsers(
-      users.map((user) =>
-        user.id === editingUser.id ? { ...user, ...data } : user,
-      ),
-    );
-
-    setEditingUser(null);
-    setOpen(false);
-  };
-
-  const deleteUser = (id: string) => {
-    setUsers(users.filter((user: User) => user.id !== id));
-  };
+  if (isLoading) {
+    return <p className="text-center mt-10 text-gray-500">Loading users...</p>;
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -104,7 +153,7 @@ export default function AboutPage() {
 
         <Button
           type="submit"
-          className="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-medium px-6 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+          className="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white"
         >
           Add User
         </Button>
@@ -125,22 +174,20 @@ export default function AboutPage() {
           <form onSubmit={form.handleSubmit(updateUser)} className="space-y-5">
             <div className="space-y-2">
               <Label>Name</Label>
-              <Input {...form.register("name")} className="w-full" />
+              <Input {...form.register("name")} />
             </div>
 
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input {...form.register("email")} className="w-full" />
+              <Input {...form.register("email")} />
             </div>
 
-            <div className="flex justify-end gap-3 pt-2">
-              <Button
-                className="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-medium px-6 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-                type="submit"
-              >
-                Update User
-              </Button>
-            </div>
+            <Button
+              type="submit"
+              className="w-full bg-sky-500 hover:bg-sky-600 text-white"
+            >
+              Update User
+            </Button>
           </form>
         </DialogContent>
       </Dialog>

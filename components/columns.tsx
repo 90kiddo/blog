@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button"
 import { ColumnDef } from "@tanstack/react-table"
 
 export type User = {
-  id: string
+  id: number | string
   name: string
   email: string
 }
 
 export const columns = (
-  deleteUser: (id: string) => void,
+  deleteUser: (id: number | string) => void,
   editUser: (user: User) => void
 ): ColumnDef<User>[] => [
   {
