@@ -4,11 +4,12 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { userSchema } from "@/lib/schema";
+import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/data-table";
-import { columns } from "@/components/columns";
+import { columns, User } from "@/components/columns";
 
 import {
   Dialog,
@@ -17,16 +18,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export default function AboutPage() {
-  const [users, setUsers] = useState([]);
-  const [editingUser, setEditingUser] = useState(null);
-  const [open, setOpen] = useState(false);
+type UserFormData = z.infer<typeof userSchema>;
 
-  const form = useForm({
+export default function AboutPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [open, setOpen] = useState<boolean>(false);
+
+  const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
   });
 
-  const onSubmit = (data) => {
+  const onSubmit = (data: UserFormData) => {
     if (editingUser) {
       setUsers(
         users.map((user) =>
@@ -36,8 +39,8 @@ export default function AboutPage() {
 
       setEditingUser(null);
     } else {
-      const newUser = {
-        id: Date.now(),
+      const newUser: User = {
+        id: crypto.randomUUID(),
         ...data,
       };
 
@@ -47,7 +50,7 @@ export default function AboutPage() {
     form.reset();
   };
 
-  const editUser = (user) => {
+  const editUser = (user: User) => {
     setEditingUser(user);
 
     form.setValue("name", user.name);
@@ -56,7 +59,9 @@ export default function AboutPage() {
     setOpen(true);
   };
 
-  const updateUser = (data) => {
+  const updateUser = (data: UserFormData) => {
+    if (!editingUser) return;
+
     setUsers(
       users.map((user) =>
         user.id === editingUser.id ? { ...user, ...data } : user,
@@ -67,8 +72,8 @@ export default function AboutPage() {
     setOpen(false);
   };
 
-  const deleteUser = (id) => {
-    setUsers(users.filter((user) => user.id !== id));
+  const deleteUser = (id: string) => {
+    setUsers(users.filter((user: User) => user.id !== id));
   };
 
   return (
@@ -81,10 +86,20 @@ export default function AboutPage() {
       >
         <div className="flex-1 space-y-2">
           <Input placeholder="Enter your name" {...form.register("name")} />
+          {form.formState.errors.name && (
+            <p className="text-sm text-red-500">
+              {form.formState.errors.name.message}
+            </p>
+          )}
         </div>
 
         <div className="flex-1 space-y-2">
-          <Input placeholder="Enter your Email" {...form.register("email")} />
+          <Input placeholder="Enter your email" {...form.register("email")} />
+          {form.formState.errors.email && (
+            <p className="text-sm text-red-500">
+              {form.formState.errors.email.message}
+            </p>
+          )}
         </div>
 
         <Button
@@ -119,7 +134,12 @@ export default function AboutPage() {
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
-              <Button className="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-medium px-6 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200" type="submit">Update User</Button>
+              <Button
+                className="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-medium px-6 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                type="submit"
+              >
+                Update User
+              </Button>
             </div>
           </form>
         </DialogContent>

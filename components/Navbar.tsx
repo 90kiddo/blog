@@ -5,10 +5,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -16,8 +14,8 @@ import {
 
 import { ModeToggle } from "./theme-btn";
 
-const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
+const Navbar: React.FC = () => {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
 
   return (
     <nav className="p-4 bg-background/50 sticky top-0 z-50 backdrop-blur">
