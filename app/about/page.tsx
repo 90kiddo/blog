@@ -38,8 +38,6 @@ export default function AboutPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
 
-
-
   const addForm = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
@@ -48,20 +46,14 @@ export default function AboutPage() {
     },
   });
 
-
-
   const editForm = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
   });
-
-
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["users"],
     queryFn: fetchUsers,
   });
-
- 
 
   const createMutation = useMutation({
     mutationFn: createUser,
@@ -85,7 +77,6 @@ export default function AboutPage() {
     console.log("Submitted form data:", data);
     createMutation.mutate(data);
   };
-
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UserFormData }) =>
@@ -120,8 +111,6 @@ export default function AboutPage() {
     setOpen(false);
   };
 
-
-
   const deleteMutation = useMutation({
     mutationFn: deleteUserApi,
     onSuccess: (_, id) => {
@@ -135,8 +124,6 @@ export default function AboutPage() {
     deleteMutation.mutate(id);
   };
 
-
-
   const editUser = (user: User) => {
     setEditingUser(user);
 
@@ -148,8 +135,6 @@ export default function AboutPage() {
     setOpen(true);
   };
 
-
-
   if (isLoading) {
     return <p className="text-center mt-10">Loading users...</p>;
   }
@@ -157,8 +142,6 @@ export default function AboutPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
       <h1 className="text-2xl font-bold">Users Data Table</h1>
-
-     
 
       <form
         onSubmit={addForm.handleSubmit(onSubmit)}
@@ -202,15 +185,12 @@ export default function AboutPage() {
         </Button>
       </form>
 
-      
-
       <div className="w-full overflow-x-auto">
         <DataTable columns={columns(deleteUser, editUser)} data={users} />
       </div>
 
-
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="bg-white dark:bg-zinc-900 border shadow-xl rounded-lg p-6">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
           </DialogHeader>
@@ -232,12 +212,12 @@ export default function AboutPage() {
               <Label>Email</Label>
               <Controller
                 control={editForm.control}
-                name="name"
+                name="email"
                 render={({ field }) => <Input {...field} />}
               />
             </div>
 
-            <Button type="submit">Update User</Button>
+            <Button type="submit" className="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white cursor-pointer">Update User</Button>
           </form>
         </DialogContent>
       </Dialog>
